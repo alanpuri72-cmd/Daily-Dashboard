@@ -1,594 +1,2479 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f5ef">
-  <title>Daymark — Student planner</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      color-scheme: light;
-      --paper: #f5f5ef; --white: #fffefa; --ink: #202c2b; --muted: #7b8580;
-      --line: #e7e8df; --green: #486e5a; --green-dark: #31523f; --green-pale: #e8efe5;
-      --yellow: #f1c75b; --coral: #dc795e; --coral-pale: #faece6; --blue: #6f91a4;
-      --shadow: 0 10px 30px rgba(34, 48, 41, .045);
-      font-family: "DM Sans", sans-serif; color: var(--ink); background: var(--paper);
-      font-synthesis: none; text-rendering: optimizeLegibility;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-width: 320px; background: var(--paper); }
-    button, input, select { font: inherit; }
-    button { color: inherit; }
-    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #a9c8a7; outline-offset: 2px; }
-    .app-shell { min-height: 100vh; }
-    .topbar { height: 72px; padding: 0 max(28px, calc((100vw - 1440px) / 2)); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 254, 250, .84); border-bottom: 1px solid var(--line); }
-    .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); }
-    .brand-mark { width: 34px; height: 34px; background: var(--green); color: white; display: grid; place-items: center; border-radius: 11px; }
-    .brand-mark svg { width: 20px; height: 20px; }
-    .brand-name { font: 800 19px/1 Manrope, sans-serif; letter-spacing: 0; }
-    .topbar-right { display: flex; align-items: center; gap: 22px; }
-    .date-label { color: var(--muted); font-size: 13px; }
-    .avatar { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 50%; background: #e7cf9c; color: #584b31; font-size: 13px; font-weight: 700; }
-    .layout { max-width: 1440px; margin: 0 auto; padding: 27px 30px 56px; display: grid; grid-template-columns: 188px minmax(0, 1fr); gap: 31px; }
-    .sidebar { align-self: start; position: sticky; top: 24px; padding-top: 7px; }
-    .nav-label { margin: 0 0 10px 12px; color: #9ba29d; text-transform: uppercase; font-size: 10px; letter-spacing: 0; font-weight: 700; }
-    .nav-list { display: grid; gap: 4px; }
-    .nav-link { height: 41px; display: flex; align-items: center; gap: 11px; padding: 0 12px; color: #68746d; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 600; transition: background .18s, color .18s; }
-    .nav-link:hover, .nav-link.active { background: var(--green-pale); color: var(--green-dark); }
-    .nav-link svg { width: 17px; height: 17px; flex: none; }
-    .sidebar-note { margin-top: 33px; padding: 15px 13px; background: #f0eadb; border-radius: 9px; }
-    .sidebar-note strong { display: block; font: 700 12px Manrope, sans-serif; margin-bottom: 5px; }
-    .sidebar-note p { color: #79745f; font-size: 11px; line-height: 1.55; margin: 0; }
-    main { min-width: 0; }
-    .welcome { display: flex; justify-content: space-between; align-items: end; margin: 3px 0 21px; }
-    .eyebrow { margin: 0 0 6px; color: var(--green); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
-    h1 { margin: 0; font: 700 27px/1.2 Manrope, sans-serif; letter-spacing: 0; }
-    .welcome-copy { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
-    .today-chip { display: flex; align-items: center; gap: 7px; padding: 8px 11px; color: var(--green-dark); background: var(--green-pale); border-radius: 7px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-    .today-chip svg { width: 14px; height: 14px; }
-    .top-grid { display: grid; grid-template-columns: minmax(0, 1.68fr) minmax(260px, .92fr); gap: 17px; align-items: stretch; }
-    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow); min-width: 0; }
-    .panel-pad { padding: 19px 20px; }
-    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
-    .panel-title { margin: 0; font: 700 15px/1.3 Manrope, sans-serif; letter-spacing: 0; }
-    .panel-kicker { color: var(--muted); font-size: 11px; }
-    .task-panel { min-height: 351px; }
-    .task-count { font-size: 11px; font-weight: 700; color: var(--green-dark); background: var(--green-pale); border-radius: 5px; padding: 5px 8px; white-space: nowrap; }
-    .progress-track { height: 5px; border-radius: 9px; background: #edf0e9; overflow: hidden; margin: -4px 0 16px; }
-    .progress-fill { height: 100%; width: 0; background: var(--green); border-radius: inherit; transition: width .25s ease; }
-    .task-list { list-style: none; margin: 0; padding: 0; max-height: 213px; overflow-y: auto; }
-    .task-row { min-height: 43px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0ea; }
-    .task-check { appearance: none; width: 17px; height: 17px; flex: none; border: 1.5px solid #bdc7bd; border-radius: 5px; cursor: pointer; position: relative; margin: 0; }
-    .task-check:checked { background: var(--green); border-color: var(--green); }
-    .task-check:checked::after { content: ""; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px; border: solid white; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
-    .task-main { min-width: 0; flex: 1; }
-    .task-name { display: block; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
-    .task-row.done .task-name { color: #99a19b; text-decoration: line-through; }
-    .task-meta { display: block; color: #9aa19b; font-size: 10px; margin-top: 2px; }
-    .task-tag { border-radius: 4px; padding: 4px 6px; font-size: 9px; font-weight: 700; background: #edf2e9; color: #55704d; white-space: nowrap; }
-    .task-tag.study { color: #657d8b; background: #edf2f4; }
-    .task-tag.personal { color: #ae6954; background: var(--coral-pale); }
-    .icon-button { border: 0; background: transparent; color: #9aa19b; padding: 5px; border-radius: 5px; cursor: pointer; display: grid; place-items: center; }
-    .icon-button:hover { color: var(--coral); background: #f8eee9; }
-    .icon-button svg { width: 15px; height: 15px; }
-    .empty-state { color: var(--muted); padding: 22px 0; text-align: center; font-size: 12px; }
-    .add-task { margin-top: 13px; display: grid; grid-template-columns: minmax(100px, 1fr) 92px 94px 34px; gap: 7px; }
-    .field { width: 100%; min-width: 0; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); padding: 0 9px; font-size: 11px; }
-    .field::placeholder { color: #a4aaa4; }
-    .primary-icon { height: 34px; width: 34px; display: grid; place-items: center; background: var(--green); color: white; border: 0; border-radius: 6px; cursor: pointer; }
-    .primary-icon:hover { background: var(--green-dark); }
-    .primary-icon svg { width: 16px; height: 16px; }
-    .right-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 14px; }
-    .weather-card { padding: 18px 19px; background: #e8efeb; border-color: #e0e8e2; position: relative; overflow: hidden; min-height: 212px; }
-    .weather-card::after { content: ""; position: absolute; width: 118px; height: 118px; border-radius: 50%; right: -29px; top: 39px; background: rgba(255,255,255,.28); }
-    .weather-top { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
-    .weather-label { color: #63776a; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
-    .weather-location { color: #63776a; font-size: 10px; margin-top: 3px; }
-    .weather-icon { position: absolute; right: 25px; top: 49px; font-size: 35px; z-index: 1; }
-    .temperature { margin: 18px 0 0; font: 700 32px/1 Manrope, sans-serif; letter-spacing: 0; }
-    .weather-description { margin: 6px 0 0; font-size: 11px; color: #64756a; }
-    .weather-foot { position: relative; z-index: 1; display: block; margin-top: 2px; color: #63776a; font-size: 10px; text-align: right; }
-    .weather-refresh { border: 0; background: transparent; padding: 3px; color: #63776a; cursor: pointer; }
-    .weather-refresh svg { width: 14px; height: 14px; display: block; }
-    .weather-search { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) 32px; gap: 6px; width: min(210px, 100%); margin-top: 10px; }
-    .weather-search .field { height: 31px; background: rgba(255,255,255,.8); }
-    .weather-search-button { width: 32px; height: 31px; display: grid; place-items: center; border: 0; border-radius: 5px; background: var(--green); color: white; cursor: pointer; }
-    .weather-search-button:hover { background: var(--green-dark); }
-    .weather-search-button svg { width: 15px; height: 15px; }
-    .weather-search-status { min-height: 11px; margin: 4px 0 0; color: #63776a; font-size: 9px; }
-    .goal-card { padding: 17px 19px; min-height: 170px; }
-    .goal-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .goal-icon { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 7px; background: #fbf1d7; color: #ae8435; }
-    .goal-icon svg { width: 15px; height: 15px; }
-    .goal-progress { display: flex; align-items: center; gap: 11px; margin-top: 13px; }
-    .goal-track { height: 6px; background: #f1eee5; border-radius: 10px; flex: 1; overflow: hidden; }
-    .goal-track span { display: block; height: 100%; width: 0; background: var(--yellow); border-radius: inherit; transition: width .2s; }
-    .goal-count { color: #817d6d; font-size: 10px; white-space: nowrap; }
-    .goal-form { margin-top: 11px; display: flex; gap: 6px; }
-    .goal-form .field { height: 30px; }
-    .goal-save { border: 0; border-radius: 5px; color: var(--green-dark); background: var(--green-pale); font-size: 10px; font-weight: 700; padding: 0 9px; cursor: pointer; }
-    .goal-done { margin-top: 9px; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
-    .goal-done input { accent-color: var(--green); }
-    .reminder-card { padding: 16px 18px; background: #fff6ed; border-color: #f2e6dc; }
-    .reminder-title { display: flex; align-items: center; gap: 8px; }
-    .reminder-title .panel-title { font-size: 13px; }
-    .bell-icon { color: var(--coral); display: grid; place-items: center; }
-    .bell-icon svg { width: 16px; height: 16px; }
-    .reminder-fields { display: grid; grid-template-columns: minmax(0, 1fr) 96px 38px auto; gap: 6px; margin-top: 11px; }
-    .reminder-fields .field { background: rgba(255,255,255,.76); height: 31px; }
-    .reminder-toggle { display: grid; place-items: center; border: 0; border-radius: 5px; background: #f4e5d8; color: var(--coral); cursor: pointer; }
-    .reminder-toggle svg { width: 16px; height: 16px; }
-    .reminder-save { border: 0; border-radius: 5px; padding: 0 9px; background: #f4e5d8; color: #965d46; font-size: 10px; font-weight: 700; cursor: pointer; }
-    .reminder-status { margin: 7px 0 0; color: #9e816d; font-size: 10px; }
-    .lower-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 17px; margin-top: 17px; align-items: start; }
-    .calendar-panel, .schedule-panel { padding: 19px 20px; }
-    .calendar-head { margin-bottom: 12px; }
-    .month-controls { display: flex; align-items: center; gap: 8px; }
-    .month-name { min-width: 105px; text-align: center; font: 700 12px Manrope, sans-serif; }
-    .month-arrow { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid var(--line); background: white; border-radius: 5px; color: #66736b; cursor: pointer; }
-    .month-arrow svg { width: 13px; height: 13px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; }
-    .weekday { padding: 6px 0 7px; color: #939b94; font-size: 9px; font-weight: 700; }
-    .calendar-day { height: 32px; position: relative; display: grid; place-items: center; border: 0; background: transparent; border-radius: 6px; font-size: 10px; cursor: pointer; }
-    .calendar-day:hover { background: #f1f4ec; }
-    .calendar-day.outside { color: #c6cbc5; }
-    .calendar-day.selected { background: var(--green); color: white; font-weight: 700; }
-    .calendar-day.today:not(.selected) { color: var(--green-dark); font-weight: 800; box-shadow: inset 0 0 0 1px #abc0ae; }
-    .event-dot { position: absolute; width: 4px; height: 4px; bottom: 3px; border-radius: 50%; background: var(--coral); }
-    .selected .event-dot { background: white; }
-    .calendar-events { min-height: 39px; margin-top: 9px; padding-top: 9px; border-top: 1px solid #eff0e9; }
-    .event-list { display: flex; flex-wrap: wrap; gap: 6px; }
-    .event-pill { display: flex; gap: 6px; align-items: center; background: #f8eee8; color: #8d5846; font-size: 10px; padding: 5px 7px; border-radius: 4px; }
-    .event-pill time { color: #a77c6d; }
-    .event-add { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr) 93px 34px; gap: 7px; }
-    .schedule-panel { min-height: 310px; }
-    .schedule-tabs { display: flex; gap: 4px; padding: 3px; background: #f3f4ee; border-radius: 6px; }
-    .schedule-tab { border: 0; background: transparent; color: #858f87; font-size: 10px; font-weight: 700; border-radius: 4px; padding: 6px 9px; cursor: pointer; }
-    .schedule-tab[aria-selected="true"] { background: white; color: var(--green-dark); box-shadow: 0 1px 3px #24352b12; }
-    .schedule-filter { display: flex; align-items: center; gap: 7px; margin: 0 0 9px; color: var(--muted); font-size: 10px; }
-    .schedule-filter select { border: 1px solid var(--line); background: white; border-radius: 5px; padding: 4px 6px; color: var(--ink); font-size: 10px; }
-    .schedule-list { list-style: none; padding: 0; margin: 0; max-height: 158px; overflow-y: auto; }
-    .schedule-row { min-height: 39px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0ea; }
-    .schedule-time { min-width: 44px; color: var(--green); font-size: 10px; font-weight: 700; }
-    .schedule-marker { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--yellow); }
-    .schedule-row.daily .schedule-marker { background: var(--blue); }
-    .schedule-name { flex: 1; font-size: 11px; font-weight: 600; }
-    .schedule-day-label { color: #9ba29b; font-size: 9px; }
-    .schedule-add { display: grid; grid-template-columns: 76px minmax(75px, 1fr) 86px 34px; gap: 6px; margin-top: 10px; }
-    .schedule-add .field { height: 31px; font-size: 10px; padding: 0 7px; }
-    .schedule-add .primary-icon { width: 31px; height: 31px; }
-    .schedule-add.school-form { grid-template-columns: 74px 77px minmax(70px, 1fr) 78px 31px; }
-    .section-heading { margin: 28px 0 12px; display: flex; align-items: baseline; justify-content: space-between; }
-    .section-heading h2 { margin: 0; font: 700 16px Manrope, sans-serif; letter-spacing: 0; }
-    .section-heading p { margin: 0; color: var(--muted); font-size: 11px; }
-    dialog { width: min(390px, calc(100% - 30px)); border: 1px solid var(--line); border-radius: 10px; padding: 20px; box-shadow: 0 18px 60px #1d302533; }
-    dialog::backdrop { background: #21332d77; }
-    dialog h2 { margin: 0 0 14px; font: 700 17px Manrope, sans-serif; }
-    .dialog-fields { display: grid; gap: 9px; }
-    .dialog-fields label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; }
-    .dialog-actions { display: flex; justify-content: end; gap: 8px; margin-top: 17px; }
-    .dialog-actions button { border: 0; border-radius: 5px; padding: 8px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
-    .dialog-cancel { background: #f0f1eb; }
-    .dialog-submit { background: var(--green); color: white; }
-    @media (min-width: 1400px) { .layout { padding-top: 34px; } }
-    @media (max-width: 1000px) {
-      .layout { grid-template-columns: 150px minmax(0, 1fr); gap: 20px; padding-inline: 20px; }
-      .top-grid { grid-template-columns: minmax(0, 1.25fr) minmax(235px, .9fr); gap: 12px; }
-      .lower-grid { gap: 12px; }
-      .panel-pad, .calendar-panel, .schedule-panel { padding: 16px; }
-      .add-task { grid-template-columns: minmax(90px, 1fr) 78px 84px 34px; }
-    }
-    @media (max-width: 760px) {
-      .topbar { height: 61px; padding: 0 17px; }
-      .date-label { display: none; }
-      .layout { display: block; padding: 17px 15px 38px; }
-      .sidebar { position: static; padding: 0; margin: 0 0 20px; overflow-x: auto; }
-      .nav-label, .sidebar-note { display: none; }
-      .nav-list { display: flex; width: max-content; gap: 5px; }
-      .nav-link { height: 35px; padding: 0 10px; font-size: 11px; }
-      .nav-link svg { width: 15px; height: 15px; }
-      .welcome { align-items: center; margin-bottom: 17px; }
-      h1 { font-size: 23px; }
-      .welcome-copy { font-size: 11px; }
-      .today-chip { font-size: 0; padding: 8px; }
-      .top-grid, .lower-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-      .right-stack { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 10px; }
-      .weather-card { grid-column: 1 / -1; min-height: 155px; }
-      .goal-card { min-height: 174px; }
-      .reminder-card { min-height: 174px; }
-      .task-panel { min-height: 330px; }
-      .lower-grid { margin-top: 12px; }
-      .section-heading { margin-top: 22px; }
-    }
-    @media (max-width: 430px) {
-      .layout { padding-inline: 11px; }
-      .welcome-copy { max-width: 230px; line-height: 1.4; }
-      .panel-pad, .calendar-panel, .schedule-panel { padding: 15px; }
-      .right-stack { grid-template-columns: 1fr; }
-      .weather-card { grid-column: auto; }
-      .goal-card, .reminder-card { min-height: 0; }
-      .reminder-fields { grid-template-columns: minmax(0, 1fr) 96px 34px; }
-      .reminder-save { grid-column: 1 / -1; height: 29px; }
-      .add-task { grid-template-columns: minmax(80px, 1fr) 74px 31px; }
-      .add-task .task-time-input { display: none; }
-      .schedule-add { grid-template-columns: 67px minmax(65px, 1fr) 73px 31px; }
-      .schedule-add.school-form { grid-template-columns: 64px 68px minmax(57px, 1fr) 70px 31px; }
-      .schedule-add .field { padding-inline: 5px; font-size: 9px; }
-      .calendar-day { height: 30px; }
-    }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
-  </style>
-</head>
-<body>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="#home" aria-label="Daymark home">
-        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 18.5V5.5h7.3a6.5 6.5 0 1 1 0 13H5Z" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-        <span class="brand-name">daymark</span>
-      </a>
-      <div class="topbar-right"><span class="date-label" id="header-date"></span><span class="avatar" aria-label="Student profile">S</span></div>
-    </header>
-    <div class="layout">
-      <aside class="sidebar" aria-label="Dashboard navigation">
-        <p class="nav-label">Workspace</p>
-        <nav class="nav-list">
-          <a class="nav-link active" href="#home"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg>Overview</a>
-          <a class="nav-link" href="#tasks"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5h12M8 12h12M8 19h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m3.5 5 1 1 2-2M3.5 12l1 1 2-2M3.5 19l1 1 2-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>My tasks</a>
-          <a class="nav-link" href="#calendar"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Calendar</a>
-          <a class="nav-link" href="#schedule"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Schedules</a>
-        </nav>
-        <div class="sidebar-note"><strong>One day at a time.</strong><p>A little progress each day adds up to a lot over time.</p></div>
-      </aside>
-      <main id="home">
-        <section class="welcome" aria-label="Daily welcome">
-          <div><p class="eyebrow" id="welcome-date"></p><h1>Make today count.</h1><p class="welcome-copy">A clear plan makes room for your best work.</p></div>
-          <div class="today-chip"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 1.6 5.2L19 6l-2.2 5.4L22 13l-5.2 1.6L19 20l-5.4-2.2L12 23l-1.6-5.2L5 20l2.2-5.4L2 13l5.2-1.6L5 6l5.4 2.2L12 3Z" fill="currentColor"/></svg><span id="day-status">Your day, in focus</span></div>
-        </section>
-        <div class="top-grid">
-          <section class="panel panel-pad task-panel" id="tasks" aria-labelledby="tasks-title">
-            <div class="panel-head"><div><h2 class="panel-title" id="tasks-title">Today's tasks</h2><span class="panel-kicker" id="task-subtitle">A good day starts with a short list.</span></div><span class="task-count" id="task-count">0 of 0 done</span></div>
-            <div class="progress-track" aria-label="Task completion"><div class="progress-fill" id="task-progress"></div></div>
-            <ul class="task-list" id="task-list"></ul>
-            <form class="add-task" id="task-form" aria-label="Add a task"><input class="field" id="task-title-input" maxlength="100" placeholder="Add a task..." aria-label="Task name" required><select class="field" id="task-category" aria-label="Task category"><option>Study</option><option>School</option><option>Personal</option></select><input class="field task-time-input" id="task-time" type="time" aria-label="Task time"><button class="primary-icon" type="submit" aria-label="Add task" title="Add task"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></form>
-          </section>
-          <div class="right-stack">
-            <section class="panel weather-card" aria-labelledby="weather-title"><div class="weather-top"><div><div class="weather-label" id="weather-title">Weather nearby</div><div class="weather-location" id="weather-location">Checking your area...</div></div><button class="weather-refresh" id="weather-refresh" type="button" aria-label="Refresh weather" title="Refresh weather"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.8 9A7 7 0 0 1 18 6.5L20 12M4 12l2 5.5A7 7 0 0 0 18.2 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="weather-icon" id="weather-icon" aria-hidden="true">◌</div><p class="temperature" id="temperature">--°</p><p class="weather-description" id="weather-description">Getting today's forecast</p><form class="weather-search" id="weather-search-form" role="search" aria-label="Search weather by city"><input class="field" id="weather-city-query" maxlength="80" placeholder="Search a city..." aria-label="City name"><button class="weather-search-button" type="submit" aria-label="Search city" title="Search city"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"/><path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></form><p class="weather-search-status" id="weather-search-status" role="status" aria-live="polite"></p><span class="weather-foot" id="weather-high-low">Weather from Open-Meteo</span></section>
-            <section class="panel goal-card" aria-labelledby="goal-title"><div class="goal-heading"><div style="display:flex;align-items:center;gap:9px"><span class="goal-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 14.6 9l6 .8-4.4 4.2 1 6-5.2-2.9-5.3 2.9 1-6-4.3-4.2 6-.8L12 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><div><h2 class="panel-title" id="goal-title">Daily goal</h2><span class="panel-kicker" id="goal-label">Make a little progress</span></div></div><span class="panel-kicker">TODAY</span></div><div class="goal-progress"><div class="goal-track"><span id="goal-progress"></span></div><span class="goal-count" id="goal-count">0%</span></div><form class="goal-form" id="goal-form"><input class="field" id="goal-input" maxlength="90" aria-label="Daily goal" placeholder="Set your goal..."><button class="goal-save" type="submit">Save goal</button></form><label class="goal-done"><input type="checkbox" id="goal-done"> Mark today's goal complete</label></section>
-            <section class="panel reminder-card" aria-labelledby="reminder-title"><div class="reminder-title"><span class="bell-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2 class="panel-title" id="reminder-title">Daily reminder</h2><span class="panel-kicker" style="margin-left:auto">PERSONAL</span></div><form class="reminder-fields" id="reminder-form"><input class="field" id="reminder-text" maxlength="90" aria-label="Reminder text" placeholder="What should you remember?"><input class="field" id="reminder-time" type="time" aria-label="Reminder time"><button class="reminder-toggle" id="reminder-toggle" type="button" aria-label="Toggle reminder" title="Enable or disable reminder"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="reminder-save" type="submit">Save</button></form><p class="reminder-status" id="reminder-status">Add a reminder and time, then save it.</p></section>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f5ef" />
+    <title>Daymark — Student planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f5f5ef;
+        --white: #fffefa;
+        --ink: #202c2b;
+        --muted: #7b8580;
+        --line: #e7e8df;
+        --green: #486e5a;
+        --green-dark: #31523f;
+        --green-pale: #e8efe5;
+        --yellow: #f1c75b;
+        --coral: #dc795e;
+        --coral-pale: #faece6;
+        --blue: #6f91a4;
+        --shadow: 0 10px 30px rgba(34, 48, 41, 0.045);
+        font-family: "DM Sans", sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--paper);
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        color: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 3px solid #a9c8a7;
+        outline-offset: 2px;
+      }
+      .app-shell {
+        min-height: 100vh;
+      }
+      .topbar {
+        height: 72px;
+        padding: 0 max(28px, calc((100vw - 1440px) / 2));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 254, 250, 0.84);
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-decoration: none;
+        color: var(--ink);
+      }
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        background: var(--green);
+        color: white;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+      }
+      .brand-mark svg {
+        width: 20px;
+        height: 20px;
+      }
+      .brand-name {
+        font:
+          800 19px/1 Manrope,
+          sans-serif;
+        letter-spacing: 0;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+      .date-label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .avatar {
+        width: 35px;
+        height: 35px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #e7cf9c;
+        color: #584b31;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .layout {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 27px 30px 56px;
+        display: grid;
+        grid-template-columns: 188px minmax(0, 1fr);
+        gap: 31px;
+      }
+      .sidebar {
+        align-self: start;
+        position: sticky;
+        top: 24px;
+        padding-top: 7px;
+      }
+      .nav-label {
+        margin: 0 0 10px 12px;
+        color: #9ba29d;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0;
+        font-weight: 700;
+      }
+      .nav-list {
+        display: grid;
+        gap: 4px;
+      }
+      .nav-link {
+        height: 41px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 12px;
+        color: #68746d;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        transition:
+          background 0.18s,
+          color 0.18s;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        background: var(--green-pale);
+        color: var(--green-dark);
+      }
+      .nav-link svg {
+        width: 17px;
+        height: 17px;
+        flex: none;
+      }
+      .sidebar-note {
+        margin-top: 33px;
+        padding: 15px 13px;
+        background: #f0eadb;
+        border-radius: 9px;
+      }
+      .sidebar-note strong {
+        display: block;
+        font:
+          700 12px Manrope,
+          sans-serif;
+        margin-bottom: 5px;
+      }
+      .sidebar-note p {
+        color: #79745f;
+        font-size: 11px;
+        line-height: 1.55;
+        margin: 0;
+      }
+      main {
+        min-width: 0;
+      }
+      .welcome {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        margin: 3px 0 21px;
+      }
+      .eyebrow {
+        margin: 0 0 6px;
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0;
+      }
+      h1 {
+        margin: 0;
+        font:
+          700 27px/1.2 Manrope,
+          sans-serif;
+        letter-spacing: 0;
+      }
+      .welcome-copy {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .today-chip {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 11px;
+        color: var(--green-dark);
+        background: var(--green-pale);
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .today-chip svg {
+        width: 14px;
+        height: 14px;
+      }
+      .top-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.68fr) minmax(260px, 0.92fr);
+        gap: 17px;
+        align-items: stretch;
+      }
+      .panel {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        box-shadow: var(--shadow);
+        min-width: 0;
+      }
+      .panel-pad {
+        padding: 19px 20px;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      .panel-title {
+        margin: 0;
+        font:
+          700 15px/1.3 Manrope,
+          sans-serif;
+        letter-spacing: 0;
+      }
+      .panel-kicker {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .task-panel {
+        min-height: 351px;
+      }
+      .task-count {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--green-dark);
+        background: var(--green-pale);
+        border-radius: 5px;
+        padding: 5px 8px;
+        white-space: nowrap;
+      }
+      .progress-track {
+        height: 5px;
+        border-radius: 9px;
+        background: #edf0e9;
+        overflow: hidden;
+        margin: -4px 0 16px;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0;
+        background: var(--green);
+        border-radius: inherit;
+        transition: width 0.25s ease;
+      }
+      .task-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 213px;
+        overflow-y: auto;
+      }
+      .task-row {
+        min-height: 43px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #f0f0ea;
+      }
+      .task-check {
+        appearance: none;
+        width: 17px;
+        height: 17px;
+        flex: none;
+        border: 1.5px solid #bdc7bd;
+        border-radius: 5px;
+        cursor: pointer;
+        position: relative;
+        margin: 0;
+      }
+      .task-check:checked {
+        background: var(--green);
+        border-color: var(--green);
+      }
+      .task-check:checked::after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 5px;
+        height: 9px;
+        border: solid white;
+        border-width: 0 1.5px 1.5px 0;
+        transform: rotate(45deg);
+      }
+      .task-main {
+        min-width: 0;
+        flex: 1;
+      }
+      .task-name {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .task-row.done .task-name {
+        color: #99a19b;
+        text-decoration: line-through;
+      }
+      .task-meta {
+        display: block;
+        color: #9aa19b;
+        font-size: 10px;
+        margin-top: 2px;
+      }
+      .task-tag {
+        border-radius: 4px;
+        padding: 4px 6px;
+        font-size: 9px;
+        font-weight: 700;
+        background: #edf2e9;
+        color: #55704d;
+        white-space: nowrap;
+      }
+      .task-tag.study {
+        color: #657d8b;
+        background: #edf2f4;
+      }
+      .task-tag.personal {
+        color: #ae6954;
+        background: var(--coral-pale);
+      }
+      .icon-button {
+        border: 0;
+        background: transparent;
+        color: #9aa19b;
+        padding: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+      }
+      .icon-button:hover {
+        color: var(--coral);
+        background: #f8eee9;
+      }
+      .icon-button svg {
+        width: 15px;
+        height: 15px;
+      }
+      .empty-state {
+        color: var(--muted);
+        padding: 22px 0;
+        text-align: center;
+        font-size: 12px;
+      }
+      .add-task {
+        margin-top: 13px;
+        display: grid;
+        grid-template-columns: minmax(100px, 1fr) 92px 94px 34px;
+        gap: 7px;
+      }
+      .field {
+        width: 100%;
+        min-width: 0;
+        height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 9px;
+        font-size: 11px;
+      }
+      .field::placeholder {
+        color: #a4aaa4;
+      }
+      .primary-icon {
+        height: 34px;
+        width: 34px;
+        display: grid;
+        place-items: center;
+        background: var(--green);
+        color: white;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .primary-icon:hover {
+        background: var(--green-dark);
+      }
+      .primary-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+      .right-stack {
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: 14px;
+      }
+      .weather-card {
+        padding: 18px 19px;
+        background: #e8efeb;
+        border-color: #e0e8e2;
+        position: relative;
+        overflow: hidden;
+        min-height: 212px;
+      }
+      .weather-card::after {
+        content: "";
+        position: absolute;
+        width: 118px;
+        height: 118px;
+        border-radius: 50%;
+        right: -29px;
+        top: 39px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      .weather-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+      }
+      .weather-label {
+        color: #63776a;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0;
+      }
+      .weather-location {
+        color: #63776a;
+        font-size: 10px;
+        margin-top: 3px;
+      }
+      .weather-icon {
+        position: absolute;
+        right: 25px;
+        top: 49px;
+        font-size: 35px;
+        z-index: 1;
+      }
+      .temperature {
+        margin: 18px 0 0;
+        font:
+          700 32px/1 Manrope,
+          sans-serif;
+        letter-spacing: 0;
+      }
+      .weather-description {
+        margin: 6px 0 0;
+        font-size: 11px;
+        color: #64756a;
+      }
+      .weather-foot {
+        position: relative;
+        z-index: 1;
+        display: block;
+        margin-top: 2px;
+        color: #63776a;
+        font-size: 10px;
+        text-align: right;
+      }
+      .weather-refresh {
+        border: 0;
+        background: transparent;
+        padding: 3px;
+        color: #63776a;
+        cursor: pointer;
+      }
+      .weather-refresh svg {
+        width: 14px;
+        height: 14px;
+        display: block;
+      }
+      .weather-search {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 32px;
+        gap: 6px;
+        width: min(210px, 100%);
+        margin-top: 10px;
+      }
+      .weather-search .field {
+        height: 31px;
+        background: rgba(255, 255, 255, 0.8);
+      }
+      .weather-search-button {
+        width: 32px;
+        height: 31px;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 5px;
+        background: var(--green);
+        color: white;
+        cursor: pointer;
+      }
+      .weather-search-button:hover {
+        background: var(--green-dark);
+      }
+      .weather-search-button svg {
+        width: 15px;
+        height: 15px;
+      }
+      .weather-search-status {
+        min-height: 11px;
+        margin: 4px 0 0;
+        color: #63776a;
+        font-size: 9px;
+      }
+      .goal-card {
+        padding: 17px 19px;
+        min-height: 170px;
+      }
+      .goal-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .goal-icon {
+        width: 27px;
+        height: 27px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: #fbf1d7;
+        color: #ae8435;
+      }
+      .goal-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+      .goal-progress {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin-top: 13px;
+      }
+      .goal-track {
+        height: 6px;
+        background: #f1eee5;
+        border-radius: 10px;
+        flex: 1;
+        overflow: hidden;
+      }
+      .goal-track span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--yellow);
+        border-radius: inherit;
+        transition: width 0.2s;
+      }
+      .goal-count {
+        color: #817d6d;
+        font-size: 10px;
+        white-space: nowrap;
+      }
+      .goal-form {
+        margin-top: 11px;
+        display: flex;
+        gap: 6px;
+      }
+      .goal-form .field {
+        height: 30px;
+      }
+      .goal-save {
+        border: 0;
+        border-radius: 5px;
+        color: var(--green-dark);
+        background: var(--green-pale);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 0 9px;
+        cursor: pointer;
+      }
+      .goal-done {
+        margin-top: 9px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .goal-done input {
+        accent-color: var(--green);
+      }
+      .reminder-card {
+        padding: 16px 18px;
+        background: #fff6ed;
+        border-color: #f2e6dc;
+      }
+      .reminder-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .reminder-title .panel-title {
+        font-size: 13px;
+      }
+      .bell-icon {
+        color: var(--coral);
+        display: grid;
+        place-items: center;
+      }
+      .bell-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+      .reminder-fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px 38px auto;
+        gap: 6px;
+        margin-top: 11px;
+      }
+      .reminder-fields .field {
+        background: rgba(255, 255, 255, 0.76);
+        height: 31px;
+      }
+      .reminder-toggle {
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 5px;
+        background: #f4e5d8;
+        color: var(--coral);
+        cursor: pointer;
+      }
+      .reminder-toggle svg {
+        width: 16px;
+        height: 16px;
+      }
+      .reminder-save {
+        border: 0;
+        border-radius: 5px;
+        padding: 0 9px;
+        background: #f4e5d8;
+        color: #965d46;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .reminder-status {
+        margin: 7px 0 0;
+        color: #9e816d;
+        font-size: 10px;
+      }
+      .lower-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+        gap: 17px;
+        margin-top: 17px;
+        align-items: start;
+      }
+      .calendar-panel,
+      .schedule-panel {
+        padding: 19px 20px;
+      }
+      .calendar-head {
+        margin-bottom: 12px;
+      }
+      .month-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .month-name {
+        min-width: 105px;
+        text-align: center;
+        font:
+          700 12px Manrope,
+          sans-serif;
+      }
+      .month-arrow {
+        width: 25px;
+        height: 25px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: white;
+        border-radius: 5px;
+        color: #66736b;
+        cursor: pointer;
+      }
+      .month-arrow svg {
+        width: 13px;
+        height: 13px;
+      }
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        text-align: center;
+      }
+      .weekday {
+        padding: 6px 0 7px;
+        color: #939b94;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .calendar-day {
+        height: 32px;
+        position: relative;
+        display: grid;
+        place-items: center;
+        border: 0;
+        background: transparent;
+        border-radius: 6px;
+        font-size: 10px;
+        cursor: pointer;
+      }
+      .calendar-day:hover {
+        background: #f1f4ec;
+      }
+      .calendar-day.outside {
+        color: #c6cbc5;
+      }
+      .calendar-day.selected {
+        background: var(--green);
+        color: white;
+        font-weight: 700;
+      }
+      .calendar-day.today:not(.selected) {
+        color: var(--green-dark);
+        font-weight: 800;
+        box-shadow: inset 0 0 0 1px #abc0ae;
+      }
+      .event-dot {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        bottom: 3px;
+        border-radius: 50%;
+        background: var(--coral);
+      }
+      .selected .event-dot {
+        background: white;
+      }
+      .calendar-events {
+        min-height: 39px;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px solid #eff0e9;
+      }
+      .event-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .event-pill {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        background: #f8eee8;
+        color: #8d5846;
+        font-size: 10px;
+        padding: 5px 7px;
+        border-radius: 4px;
+      }
+      .event-pill time {
+        color: #a77c6d;
+      }
+      .event-add {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 93px 34px;
+        gap: 7px;
+      }
+      .schedule-panel {
+        min-height: 310px;
+      }
+      .schedule-tabs {
+        display: flex;
+        gap: 4px;
+        padding: 3px;
+        background: #f3f4ee;
+        border-radius: 6px;
+      }
+      .schedule-tab {
+        border: 0;
+        background: transparent;
+        color: #858f87;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 6px 9px;
+        cursor: pointer;
+      }
+      .schedule-tab[aria-selected="true"] {
+        background: white;
+        color: var(--green-dark);
+        box-shadow: 0 1px 3px #24352b12;
+      }
+      .schedule-filter {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 9px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .schedule-filter select {
+        border: 1px solid var(--line);
+        background: white;
+        border-radius: 5px;
+        padding: 4px 6px;
+        color: var(--ink);
+        font-size: 10px;
+      }
+      .schedule-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 158px;
+        overflow-y: auto;
+      }
+      .schedule-row {
+        min-height: 39px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #f0f0ea;
+      }
+      .schedule-time {
+        min-width: 44px;
+        color: var(--green);
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .schedule-marker {
+        width: 7px;
+        height: 7px;
+        flex: none;
+        border-radius: 50%;
+        background: var(--yellow);
+      }
+      .schedule-row.daily .schedule-marker {
+        background: var(--blue);
+      }
+      .schedule-name {
+        flex: 1;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .schedule-day-label {
+        color: #9ba29b;
+        font-size: 9px;
+      }
+      .schedule-add {
+        display: grid;
+        grid-template-columns: 76px minmax(75px, 1fr) 86px 34px;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .schedule-add .field {
+        height: 31px;
+        font-size: 10px;
+        padding: 0 7px;
+      }
+      .schedule-add .primary-icon {
+        width: 31px;
+        height: 31px;
+      }
+      .schedule-add.school-form {
+        grid-template-columns: 74px 77px minmax(70px, 1fr) 78px 31px;
+      }
+      .section-heading {
+        margin: 28px 0 12px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+      .section-heading h2 {
+        margin: 0;
+        font:
+          700 16px Manrope,
+          sans-serif;
+        letter-spacing: 0;
+      }
+      .section-heading p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      dialog {
+        width: min(390px, calc(100% - 30px));
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 18px 60px #1d302533;
+      }
+      dialog::backdrop {
+        background: #21332d77;
+      }
+      dialog h2 {
+        margin: 0 0 14px;
+        font:
+          700 17px Manrope,
+          sans-serif;
+      }
+      .dialog-fields {
+        display: grid;
+        gap: 9px;
+      }
+      .dialog-fields label {
+        display: grid;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .dialog-actions {
+        display: flex;
+        justify-content: end;
+        gap: 8px;
+        margin-top: 17px;
+      }
+      .dialog-actions button {
+        border: 0;
+        border-radius: 5px;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .dialog-cancel {
+        background: #f0f1eb;
+      }
+      .dialog-submit {
+        background: var(--green);
+        color: white;
+      }
+      @media (min-width: 1400px) {
+        .layout {
+          padding-top: 34px;
+        }
+      }
+      @media (max-width: 1000px) {
+        .layout {
+          grid-template-columns: 150px minmax(0, 1fr);
+          gap: 20px;
+          padding-inline: 20px;
+        }
+        .top-grid {
+          grid-template-columns: minmax(0, 1.25fr) minmax(235px, 0.9fr);
+          gap: 12px;
+        }
+        .lower-grid {
+          gap: 12px;
+        }
+        .panel-pad,
+        .calendar-panel,
+        .schedule-panel {
+          padding: 16px;
+        }
+        .add-task {
+          grid-template-columns: minmax(90px, 1fr) 78px 84px 34px;
+        }
+      }
+      @media (max-width: 760px) {
+        .topbar {
+          height: 61px;
+          padding: 0 17px;
+        }
+        .date-label {
+          display: none;
+        }
+        .layout {
+          display: block;
+          padding: 17px 15px 38px;
+        }
+        .sidebar {
+          position: static;
+          padding: 0;
+          margin: 0 0 20px;
+          overflow-x: auto;
+        }
+        .nav-label,
+        .sidebar-note {
+          display: none;
+        }
+        .nav-list {
+          display: flex;
+          width: max-content;
+          gap: 5px;
+        }
+        .nav-link {
+          height: 35px;
+          padding: 0 10px;
+          font-size: 11px;
+        }
+        .nav-link svg {
+          width: 15px;
+          height: 15px;
+        }
+        .welcome {
+          align-items: center;
+          margin-bottom: 17px;
+        }
+        h1 {
+          font-size: 23px;
+        }
+        .welcome-copy {
+          font-size: 11px;
+        }
+        .today-chip {
+          font-size: 0;
+          padding: 8px;
+        }
+        .top-grid,
+        .lower-grid {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 12px;
+        }
+        .right-stack {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-rows: auto auto;
+          gap: 10px;
+        }
+        .weather-card {
+          grid-column: 1 / -1;
+          min-height: 155px;
+        }
+        .goal-card {
+          min-height: 174px;
+        }
+        .reminder-card {
+          min-height: 174px;
+        }
+        .task-panel {
+          min-height: 330px;
+        }
+        .lower-grid {
+          margin-top: 12px;
+        }
+        .section-heading {
+          margin-top: 22px;
+        }
+      }
+      @media (max-width: 430px) {
+        .layout {
+          padding-inline: 11px;
+        }
+        .welcome-copy {
+          max-width: 230px;
+          line-height: 1.4;
+        }
+        .panel-pad,
+        .calendar-panel,
+        .schedule-panel {
+          padding: 15px;
+        }
+        .right-stack {
+          grid-template-columns: 1fr;
+        }
+        .weather-card {
+          grid-column: auto;
+        }
+        .goal-card,
+        .reminder-card {
+          min-height: 0;
+        }
+        .reminder-fields {
+          grid-template-columns: minmax(0, 1fr) 96px 34px;
+        }
+        .reminder-save {
+          grid-column: 1 / -1;
+          height: 29px;
+        }
+        .add-task {
+          grid-template-columns: minmax(80px, 1fr) 74px 31px;
+        }
+        .add-task .task-time-input {
+          display: none;
+        }
+        .schedule-add {
+          grid-template-columns: 67px minmax(65px, 1fr) 73px 31px;
+        }
+        .schedule-add.school-form {
+          grid-template-columns: 64px 68px minmax(57px, 1fr) 70px 31px;
+        }
+        .schedule-add .field {
+          padding-inline: 5px;
+          font-size: 9px;
+        }
+        .calendar-day {
+          height: 30px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#home" aria-label="Daymark home">
+          <span class="brand-mark"
+            ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 18.5V5.5h7.3a6.5 6.5 0 1 1 0 13H5Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M9 12h9"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              /></svg
+          ></span>
+          <span class="brand-name">daymark</span>
+        </a>
+        <div class="topbar-right">
+          <span class="date-label" id="header-date"></span
+          ><span class="avatar" aria-label="Student profile">S</span>
+        </div>
+      </header>
+      <div class="layout">
+        <aside class="sidebar" aria-label="Dashboard navigation">
+          <p class="nav-label">Workspace</p>
+          <nav class="nav-list">
+            <a class="nav-link active" href="#home"
+              ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="3.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
+                <rect
+                  x="13.5"
+                  y="3.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
+                <rect
+                  x="3.5"
+                  y="13.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
+                <rect
+                  x="13.5"
+                  y="13.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                /></svg
+              >Overview</a
+            >
+            <a class="nav-link" href="#tasks"
+              ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M8 5h12M8 12h12M8 19h12"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="m3.5 5 1 1 2-2M3.5 12l1 1 2-2M3.5 19l1 1 2-2"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              >My tasks</a
+            >
+            <a class="nav-link" href="#calendar"
+              ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="5"
+                  width="17"
+                  height="15.5"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
+                <path
+                  d="M7.5 3v4M16.5 3v4M4 9.5h16"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                /></svg
+              >Calendar</a
+            >
+            <a class="nav-link" href="#schedule"
+              ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                />
+                <path
+                  d="M12 7v5l3.5 2"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+              >Schedules</a
+            >
+          </nav>
+          <div class="sidebar-note">
+            <strong>One day at a time.</strong>
+            <p>A little progress each day adds up to a lot over time.</p>
           </div>
-        </div>
-        <section class="section-heading"><h2>Plan ahead</h2><p>Your calendar and routines, all in one place.</p></section>
-        <div class="lower-grid">
-          <section class="panel calendar-panel" id="calendar" aria-labelledby="calendar-title"><div class="panel-head calendar-head"><div><h2 class="panel-title" id="calendar-title">Calendar</h2><span class="panel-kicker" id="selected-date-label"></span></div><div class="month-controls"><button class="month-arrow" id="month-prev" type="button" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="month-name" id="month-name"></span><button class="month-arrow" id="month-next" type="button" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></div><div class="calendar-grid" id="calendar-grid" role="grid" aria-label="Monthly calendar"></div><div class="calendar-events" id="calendar-events" aria-live="polite"></div><form class="event-add" id="event-form" aria-label="Add calendar event"><input class="field" id="event-title" maxlength="90" placeholder="Add an event..." aria-label="Event name" required><input class="field" id="event-time" type="time" aria-label="Event time"><button class="primary-icon" type="submit" aria-label="Add event" title="Add event"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></form></section>
-          <section class="panel schedule-panel" id="schedule" aria-labelledby="schedule-title"><div class="panel-head"><div><h2 class="panel-title" id="schedule-title">My schedules</h2><span class="panel-kicker">Keep your routines up to date.</span></div><div class="schedule-tabs" role="tablist" aria-label="Schedule type"><button class="schedule-tab" id="school-tab" type="button" role="tab" aria-selected="true">School</button><button class="schedule-tab" id="daily-tab" type="button" role="tab" aria-selected="false">Daily</button></div></div>
-            <div id="school-schedule" role="tabpanel"><label class="schedule-filter">Classes for <select id="school-day" aria-label="School schedule day"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></label><ul class="schedule-list" id="school-list"></ul><form class="schedule-add school-form" id="school-form" aria-label="Add class"><input class="field" type="time" id="school-time" aria-label="Class time" required><input class="field" maxlength="60" id="school-name" placeholder="Class name" aria-label="Class name" required><select class="field" id="school-add-day" aria-label="Class day"><option value="1">Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option><option value="0">Sun</option></select><input class="field" type="time" id="school-end" aria-label="Class end time"><button class="primary-icon" type="submit" aria-label="Add class" title="Add class"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></form></div>
-            <div id="daily-schedule" role="tabpanel" hidden><ul class="schedule-list" id="daily-list"></ul><form class="schedule-add" id="daily-form" aria-label="Add daily schedule item"><input class="field" type="time" id="daily-time" aria-label="Routine time" required><input class="field" maxlength="60" id="daily-name" placeholder="Add routine..." aria-label="Routine name" required><input class="field" type="time" id="daily-end" aria-label="End time"><button class="primary-icon" type="submit" aria-label="Add routine" title="Add routine"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></form></div>
+        </aside>
+        <main id="home">
+          <section class="welcome" aria-label="Daily welcome">
+            <div>
+              <p class="eyebrow" id="welcome-date"></p>
+              <h1>Make today count.</h1>
+              <p class="welcome-copy">
+                A clear plan makes room for your best work.
+              </p>
+            </div>
+            <div class="today-chip">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="m12 3 1.6 5.2L19 6l-2.2 5.4L22 13l-5.2 1.6L19 20l-5.4-2.2L12 23l-1.6-5.2L5 20l2.2-5.4L2 13l5.2-1.6L5 6l5.4 2.2L12 3Z"
+                  fill="currentColor"
+                /></svg
+              ><span id="day-status">Your day, in focus</span>
+            </div>
           </section>
-        </div>
-      </main>
+          <div class="top-grid">
+            <section
+              class="panel panel-pad task-panel"
+              id="tasks"
+              aria-labelledby="tasks-title"
+            >
+              <div class="panel-head">
+                <div>
+                  <h2 class="panel-title" id="tasks-title">Today's tasks</h2>
+                  <span class="panel-kicker" id="task-subtitle"
+                    >A good day starts with a short list.</span
+                  >
+                </div>
+                <span class="task-count" id="task-count">0 of 0 done</span>
+              </div>
+              <div class="progress-track" aria-label="Task completion">
+                <div class="progress-fill" id="task-progress"></div>
+              </div>
+              <ul class="task-list" id="task-list"></ul>
+              <form class="add-task" id="task-form" aria-label="Add a task">
+                <input
+                  class="field"
+                  id="task-title-input"
+                  maxlength="100"
+                  placeholder="Add a task..."
+                  aria-label="Task name"
+                  required
+                /><select
+                  class="field"
+                  id="task-category"
+                  aria-label="Task category"
+                >
+                  <option>Study</option>
+                  <option>School</option>
+                  <option>Personal</option></select
+                ><input
+                  class="field task-time-input"
+                  id="task-time"
+                  type="time"
+                  aria-label="Task time"
+                /><button
+                  class="primary-icon"
+                  type="submit"
+                  aria-label="Add task"
+                  title="Add task"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </button>
+              </form>
+            </section>
+            <div class="right-stack">
+              <section
+                class="panel weather-card"
+                aria-labelledby="weather-title"
+              >
+                <div class="weather-top">
+                  <div>
+                    <div class="weather-label" id="weather-title">
+                      Weather nearby
+                    </div>
+                    <div class="weather-location" id="weather-location">
+                      Checking your area...
+                    </div>
+                  </div>
+                  <button
+                    class="weather-refresh"
+                    id="weather-refresh"
+                    type="button"
+                    aria-label="Refresh weather"
+                    title="Refresh weather"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M20 7v5h-5M4 17v-5h5"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M5.8 9A7 7 0 0 1 18 6.5L20 12M4 12l2 5.5A7 7 0 0 0 18.2 15"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div class="weather-icon" id="weather-icon" aria-hidden="true">
+                  ◌
+                </div>
+                <p class="temperature" id="temperature">--°</p>
+                <p class="weather-description" id="weather-description">
+                  Getting today's forecast
+                </p>
+                <form
+                  class="weather-search"
+                  id="weather-search-form"
+                  role="search"
+                  aria-label="Search weather by city"
+                >
+                  <input
+                    class="field"
+                    id="weather-city-query"
+                    maxlength="80"
+                    placeholder="Search a city..."
+                    aria-label="City name"
+                  /><button
+                    class="weather-search-button"
+                    type="submit"
+                    aria-label="Search city"
+                    title="Search city"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle
+                        cx="10.8"
+                        cy="10.8"
+                        r="6.3"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      />
+                      <path
+                        d="m15.5 15.5 4.2 4.2"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </button>
+                </form>
+                <p
+                  class="weather-search-status"
+                  id="weather-search-status"
+                  role="status"
+                  aria-live="polite"
+                ></p>
+                <span class="weather-foot" id="weather-high-low"
+                  >Weather from Open-Meteo</span
+                >
+              </section>
+              <section class="panel goal-card" aria-labelledby="goal-title">
+                <div class="goal-heading">
+                  <div style="display: flex; align-items: center; gap: 9px">
+                    <span class="goal-icon"
+                      ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M12 3.5 14.6 9l6 .8-4.4 4.2 1 6-5.2-2.9-5.3 2.9 1-6-4.3-4.2 6-.8L12 3.5Z"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linejoin="round"
+                        /></svg
+                    ></span>
+                    <div>
+                      <h2 class="panel-title" id="goal-title">Daily goal</h2>
+                      <span class="panel-kicker" id="goal-label"
+                        >Make a little progress</span
+                      >
+                    </div>
+                  </div>
+                  <span class="panel-kicker">TODAY</span>
+                </div>
+                <div class="goal-progress">
+                  <div class="goal-track"><span id="goal-progress"></span></div>
+                  <span class="goal-count" id="goal-count">0%</span>
+                </div>
+                <form class="goal-form" id="goal-form">
+                  <input
+                    class="field"
+                    id="goal-input"
+                    maxlength="90"
+                    aria-label="Daily goal"
+                    placeholder="Set your goal..."
+                  /><button class="goal-save" type="submit">Save goal</button>
+                </form>
+                <label class="goal-done"
+                  ><input type="checkbox" id="goal-done" /> Mark today's goal
+                  complete</label
+                >
+              </section>
+              <section
+                class="panel reminder-card"
+                aria-labelledby="reminder-title"
+              >
+                <div class="reminder-title">
+                  <span class="bell-icon"
+                    ><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      /></svg
+                  ></span>
+                  <h2 class="panel-title" id="reminder-title">
+                    Daily reminder
+                  </h2>
+                  <span class="panel-kicker" style="margin-left: auto"
+                    >PERSONAL</span
+                  >
+                </div>
+                <form class="reminder-fields" id="reminder-form">
+                  <input
+                    class="field"
+                    id="reminder-text"
+                    maxlength="90"
+                    aria-label="Reminder text"
+                    placeholder="What should you remember?"
+                  /><input
+                    class="field"
+                    id="reminder-time"
+                    type="time"
+                    aria-label="Reminder time"
+                  /><button
+                    class="reminder-toggle"
+                    id="reminder-toggle"
+                    type="button"
+                    aria-label="Toggle reminder"
+                    title="Enable or disable reminder"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg></button
+                  ><button class="reminder-save" type="submit">Save</button>
+                </form>
+                <p class="reminder-status" id="reminder-status">
+                  Add a reminder and time, then save it.
+                </p>
+              </section>
+            </div>
+          </div>
+          <section class="section-heading">
+            <h2>Plan ahead</h2>
+            <p>Your calendar and routines, all in one place.</p>
+          </section>
+          <div class="lower-grid">
+            <section
+              class="panel calendar-panel"
+              id="calendar"
+              aria-labelledby="calendar-title"
+            >
+              <div class="panel-head calendar-head">
+                <div>
+                  <h2 class="panel-title" id="calendar-title">Calendar</h2>
+                  <span class="panel-kicker" id="selected-date-label"></span>
+                </div>
+                <div class="month-controls">
+                  <button
+                    class="month-arrow"
+                    id="month-prev"
+                    type="button"
+                    aria-label="Previous month"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="m15 18-6-6 6-6"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg></button
+                  ><span class="month-name" id="month-name"></span
+                  ><button
+                    class="month-arrow"
+                    id="month-next"
+                    type="button"
+                    aria-label="Next month"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="m9 18 6-6-6-6"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div
+                class="calendar-grid"
+                id="calendar-grid"
+                role="grid"
+                aria-label="Monthly calendar"
+              ></div>
+              <div
+                class="calendar-events"
+                id="calendar-events"
+                aria-live="polite"
+              ></div>
+              <form
+                class="event-add"
+                id="event-form"
+                aria-label="Add calendar event"
+              >
+                <input
+                  class="field"
+                  id="event-title"
+                  maxlength="90"
+                  placeholder="Add an event..."
+                  aria-label="Event name"
+                  required
+                /><input
+                  class="field"
+                  id="event-time"
+                  type="time"
+                  aria-label="Event time"
+                /><button
+                  class="primary-icon"
+                  type="submit"
+                  aria-label="Add event"
+                  title="Add event"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </button>
+              </form>
+            </section>
+            <section
+              class="panel schedule-panel"
+              id="schedule"
+              aria-labelledby="schedule-title"
+            >
+              <div class="panel-head">
+                <div>
+                  <h2 class="panel-title" id="schedule-title">My schedules</h2>
+                  <span class="panel-kicker"
+                    >Keep your routines up to date.</span
+                  >
+                </div>
+                <div
+                  class="schedule-tabs"
+                  role="tablist"
+                  aria-label="Schedule type"
+                >
+                  <button
+                    class="schedule-tab"
+                    id="school-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                  >
+                    School</button
+                  ><button
+                    class="schedule-tab"
+                    id="daily-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                  >
+                    Daily
+                  </button>
+                </div>
+              </div>
+              <div id="school-schedule" role="tabpanel">
+                <label class="schedule-filter"
+                  >Classes for
+                  <select id="school-day" aria-label="School schedule day">
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                    <option value="0">Sunday</option>
+                  </select></label
+                >
+                <ul class="schedule-list" id="school-list"></ul>
+                <form
+                  class="schedule-add school-form"
+                  id="school-form"
+                  aria-label="Add class"
+                >
+                  <input
+                    class="field"
+                    type="time"
+                    id="school-time"
+                    aria-label="Class time"
+                    required
+                  /><input
+                    class="field"
+                    maxlength="60"
+                    id="school-name"
+                    placeholder="Class name"
+                    aria-label="Class name"
+                    required
+                  /><select
+                    class="field"
+                    id="school-add-day"
+                    aria-label="Class day"
+                  >
+                    <option value="1">Mon</option>
+                    <option value="2">Tue</option>
+                    <option value="3">Wed</option>
+                    <option value="4">Thu</option>
+                    <option value="5">Fri</option>
+                    <option value="6">Sat</option>
+                    <option value="0">Sun</option></select
+                  ><input
+                    class="field"
+                    type="time"
+                    id="school-end"
+                    aria-label="Class end time"
+                  /><button
+                    class="primary-icon"
+                    type="submit"
+                    aria-label="Add class"
+                    title="Add class"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </button>
+                </form>
+              </div>
+              <div id="daily-schedule" role="tabpanel" hidden>
+                <ul class="schedule-list" id="daily-list"></ul>
+                <form
+                  class="schedule-add"
+                  id="daily-form"
+                  aria-label="Add daily schedule item"
+                >
+                  <input
+                    class="field"
+                    type="time"
+                    id="daily-time"
+                    aria-label="Routine time"
+                    required
+                  /><input
+                    class="field"
+                    maxlength="60"
+                    id="daily-name"
+                    placeholder="Add routine..."
+                    aria-label="Routine name"
+                    required
+                  /><input
+                    class="field"
+                    type="time"
+                    id="daily-end"
+                    aria-label="End time"
+                  /><button
+                    class="primary-icon"
+                    type="submit"
+                    aria-label="Add routine"
+                    title="Add routine"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
-  </div>
-  <dialog id="event-dialog" aria-labelledby="dialog-title"><form id="event-dialog-form"><h2 id="dialog-title">Add calendar event</h2><div class="dialog-fields"><label>Event name<input class="field" id="dialog-event-title" maxlength="90" required></label><label>Date<input class="field" id="dialog-event-date" type="date" required></label><label>Time<input class="field" id="dialog-event-time" type="time"></label></div><div class="dialog-actions"><button class="dialog-cancel" type="button" id="dialog-cancel">Cancel</button><button class="dialog-submit" type="submit">Add event</button></div></form></dialog>
-  <script>
-    (() => {
-      const $ = (selector) => document.querySelector(selector);
-      const storageKey = "daymark-student-dashboard-v1";
-      const today = new Date();
-      const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const todayKey = dateKey(today);
-      const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      const defaults = {
-        tasks: [
-          { id: "sample-1", title: "Review biology notes", category: "Study", time: "09:30", done: false },
-          { id: "sample-2", title: "Finish history reading", category: "School", time: "11:00", done: false },
-          { id: "sample-3", title: "Plan this week's assignments", category: "Personal", time: "15:30", done: false }
-        ], goal: { text: "Finish one assignment before lunch", done: false },
-        reminder: { text: "Pack my bag for tomorrow", time: "20:00", enabled: true }, events: [], weatherLocation: null,
-        school: [
-          { id: "s1", day: 1, start: "08:30", end: "09:20", title: "Biology" },
-          { id: "s2", day: 1, start: "09:35", end: "10:25", title: "English literature" },
-          { id: "s3", day: 1, start: "11:00", end: "11:50", title: "Algebra II" },
-          { id: "s4", day: 1, start: "13:00", end: "13:50", title: "World history" },
-          { id: "s5", day: 2, start: "08:30", end: "09:20", title: "Chemistry" },
-          { id: "s6", day: 3, start: "09:35", end: "10:25", title: "English literature" },
-          { id: "s7", day: 4, start: "11:00", end: "11:50", title: "Algebra II" },
-          { id: "s8", day: 5, start: "08:30", end: "09:20", title: "Biology" }
-        ], daily: [
-          { id: "d1", start: "07:00", end: "07:30", title: "Get ready & breakfast" },
-          { id: "d2", start: "16:00", end: "16:45", title: "Homework focus" },
-          { id: "d3", start: "17:00", end: "17:30", title: "Take a break" },
-          { id: "d4", start: "20:30", end: "21:00", title: "Wind down" }
-        ]
-      };
-      let state;
-      try {
-        const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-        state = saved ? {
-          ...defaults,
-          ...saved,
-          tasks: saved.date === todayKey ? saved.tasks ?? defaults.tasks : defaults.tasks,
-          goal: saved.date === todayKey ? saved.goal ?? defaults.goal : defaults.goal,
-          reminder: saved.reminder ?? defaults.reminder,
-          events: saved.events ?? defaults.events,
-          school: saved.school ?? defaults.school,
-          daily: saved.daily ?? defaults.daily,
-          date: todayKey
-        } : { ...defaults, date: todayKey };
-      } catch { state = { ...defaults, date: todayKey }; }
-      let displayedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      let selectedDate = todayKey;
-      let weatherRequestId = 0;
-
-      function save() { localStorage.setItem(storageKey, JSON.stringify(state)); }
-      function escapeHtml(value) {
-        return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-      }
-      function timeText(value) {
-        if (!value) return "";
-        const [hours, minutes] = value.split(":").map(Number);
-        return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
-      }
-      function renderTasks() {
-        const list = $("#task-list");
-        const done = state.tasks.filter((task) => task.done).length;
-        const total = state.tasks.length;
-        $("#task-count").textContent = `${done} of ${total} done`;
-        $("#task-progress").style.width = `${total ? Math.round(done / total * 100) : 0}%`;
-        $("#task-subtitle").textContent = total ? `${total - done} left to focus on.` : "A good day starts with a short list.";
-        list.innerHTML = total ? state.tasks.map((task) => `<li class="task-row${task.done ? " done" : ""}"><input class="task-check" type="checkbox" data-task-check="${escapeHtml(task.id)}" aria-label="Mark ${escapeHtml(task.title)} ${task.done ? "incomplete" : "complete"}" ${task.done ? "checked" : ""}><div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${task.time ? `${timeText(task.time)} · ` : ""}${escapeHtml(task.category)}</span></div><span class="task-tag ${task.category.toLowerCase()}">${escapeHtml(task.category)}</span><button class="icon-button" type="button" data-task-delete="${escapeHtml(task.id)}" aria-label="Delete ${escapeHtml(task.title)}" title="Delete task"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 13h11l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>`).join("") : '<li class="empty-state">Nothing on the list yet. Add a task to get started.</li>';
-        list.querySelectorAll("[data-task-check]").forEach((checkbox) => checkbox.addEventListener("change", () => {
-          const task = state.tasks.find((item) => item.id === checkbox.dataset.taskCheck);
-          if (task) task.done = checkbox.checked;
-          save(); renderTasks(); renderRecommendation();
-        }));
-        list.querySelectorAll("[data-task-delete]").forEach((button) => button.addEventListener("click", () => {
-          state.tasks = state.tasks.filter((task) => task.id !== button.dataset.taskDelete);
-          save(); renderTasks(); renderRecommendation();
-        }));
-        renderGoal();
-      }
-      function renderGoal() {
-        const goal = state.goal || { text: "", done: false };
-        $("#goal-input").value = goal.text;
-        $("#goal-label").textContent = goal.text || "Make a little progress";
-        $("#goal-done").checked = Boolean(goal.done);
-        const percent = goal.done ? 100 : 0;
-        $("#goal-progress").style.width = `${percent}%`;
-        $("#goal-count").textContent = `${percent}%`;
-      }
-      function renderReminder() {
-        const reminder = state.reminder || { text: "", time: "", enabled: false };
-        $("#reminder-text").value = reminder.text;
-        $("#reminder-time").value = reminder.time;
-        $("#reminder-status").textContent = reminder.enabled && reminder.text && reminder.time ? `On · ${timeText(reminder.time)} · ${reminder.text}` : "Add a reminder and time, then save it.";
-        $("#reminder-toggle").style.opacity = reminder.enabled ? "1" : ".55";
-        $("#reminder-toggle").setAttribute("aria-pressed", String(Boolean(reminder.enabled)));
-      }
-      function renderCalendar() {
-        const year = displayedMonth.getFullYear();
-        const month = displayedMonth.getMonth();
-        $("#month-name").textContent = displayedMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-        const monthStart = new Date(year, month, 1);
-        const mondayOffset = (monthStart.getDay() + 6) % 7;
-        const gridStart = new Date(year, month, 1 - mondayOffset);
-        const weekdaysShort = ["M", "T", "W", "T", "F", "S", "S"];
-        let markup = weekdaysShort.map((day) => `<span class="weekday" role="columnheader">${day}</span>`).join("");
-        for (let index = 0; index < 42; index++) {
-          const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
-          const key = dateKey(date);
-          const outside = date.getMonth() !== month;
-          const hasEvent = state.events.some((event) => event.date === key);
-          const classes = ["calendar-day", outside ? "outside" : "", key === todayKey ? "today" : "", key === selectedDate ? "selected" : ""].filter(Boolean).join(" ");
-          markup += `<button type="button" class="${classes}" role="gridcell" aria-label="${escapeHtml(date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }))}${hasEvent ? ", has event" : ""}" aria-pressed="${key === selectedDate}" data-calendar-date="${key}">${date.getDate()}${hasEvent ? '<span class="event-dot" aria-hidden="true"></span>' : ""}</button>`;
-        }
-        $("#calendar-grid").innerHTML = markup;
-        $("#calendar-grid").querySelectorAll("[data-calendar-date]").forEach((button) => button.addEventListener("click", () => {
-          selectedDate = button.dataset.calendarDate;
-          const date = new Date(`${selectedDate}T12:00:00`);
-          displayedMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-          renderCalendar();
-        }));
-        const selected = new Date(`${selectedDate}T12:00:00`);
-        $("#selected-date-label").textContent = selected.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-        const events = state.events.filter((event) => event.date === selectedDate).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-        $("#calendar-events").innerHTML = events.length ? `<div class="event-list">${events.map((event) => `<span class="event-pill"><span>${escapeHtml(event.title)}</span>${event.time ? `<time>${timeText(event.time)}</time>` : ""}<button class="icon-button" data-event-delete="${escapeHtml(event.id)}" type="button" aria-label="Delete ${escapeHtml(event.title)}"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 13h9l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>`).join("")}</div>` : '<span class="panel-kicker">No events on this day.</span>';
-        $("#calendar-events").querySelectorAll("[data-event-delete]").forEach((button) => button.addEventListener("click", () => {
-          state.events = state.events.filter((event) => event.id !== button.dataset.eventDelete);
-          save(); renderCalendar(); renderRecommendation();
-        }));
-      }
-      function scheduleRow(item, type) {
-        const day = type === "school" ? `<span class="schedule-day-label">${weekdays[item.day].slice(0, 3)}</span>` : "";
-        return `<li class="schedule-row ${type === "daily" ? "daily" : ""}"><span class="schedule-time">${timeText(item.start)}</span><span class="schedule-marker" aria-hidden="true"></span><span class="schedule-name">${escapeHtml(item.title)}${item.end ? ` <span class="schedule-day-label">· ${timeText(item.end)}</span>` : ""}</span>${day}<button class="icon-button" type="button" data-schedule-delete="${escapeHtml(item.id)}" data-schedule-type="${type}" aria-label="Delete ${escapeHtml(item.title)}" title="Delete item"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 13h9l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>`;
-      }
-      function renderSchedules() {
-        const day = Number($("#school-day").value);
-        const classes = state.school.filter((item) => Number(item.day) === day).sort((a, b) => a.start.localeCompare(b.start));
-        $("#school-list").innerHTML = classes.length ? classes.map((item) => scheduleRow(item, "school")).join("") : '<li class="empty-state">No classes scheduled for this day.</li>';
-        const routine = [...state.daily].sort((a, b) => a.start.localeCompare(b.start));
-        $("#daily-list").innerHTML = routine.length ? routine.map((item) => scheduleRow(item, "daily")).join("") : '<li class="empty-state">No daily routine yet. Add your first item.</li>';
-        document.querySelectorAll("[data-schedule-delete]").forEach((button) => button.addEventListener("click", () => {
-          const key = button.dataset.scheduleType;
-          state[key] = state[key].filter((item) => item.id !== button.dataset.scheduleDelete);
-          save(); renderSchedules(); renderRecommendation();
-        }));
-      }
-      function renderRecommendation() {
-        const openTasks = state.tasks.filter((task) => !task.done);
-        const nextTask = [...openTasks].filter((task) => task.time).sort((a, b) => a.time.localeCompare(b.time))[0];
-        const now = `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
-        const nextClass = state.school.filter((item) => Number(item.day) === today.getDay() && item.start >= now).sort((a, b) => a.start.localeCompare(b.start))[0];
-        let recommendation;
-        if (openTasks.length === 0 && state.tasks.length > 0) {
-          recommendation = "You cleared your task list. Take a real break before choosing what comes next.";
-        } else if (openTasks.length === 0 && state.tasks.length === 0) {
-          recommendation = "Start by adding one small task. A short list is easier to tackle.";
-        } else if (nextTask && nextTask.time <= now) {
-          recommendation = `Your task “${nextTask.title}” is due now or overdue. Give it 15 focused minutes to get moving.`;
-        } else if (nextClass) {
-          recommendation = `Your next class is ${nextClass.title} at ${timeText(nextClass.start)}. Check your bag, then pick one task to do before it.`;
-        } else if (openTasks.length >= 4) {
-          recommendation = `You have ${openTasks.length} tasks to go. Start with “${openTasks[0].title}” and work in a short focus block.`;
-        } else if (state.goal && state.goal.done) {
-          recommendation = "You reached your daily goal. Enjoy a short reset, then decide whether to keep going.";
-        } else {
-          recommendation = `Make a start on “${openTasks[0].title}”. Try 25 minutes of focus, then take a five-minute break.`;
-        }
-        $("#day-status").textContent = recommendation;
-      }
-      function codeToWeather(code) {
-        if (code === 0) return ["☀", "Clear sky"];
-        if ([1, 2].includes(code)) return ["⛅", "Partly cloudy"];
-        if (code === 3) return ["☁", "Overcast"];
-        if ([45, 48].includes(code)) return ["〰", "Foggy"];
-        if ([51, 53, 55, 56, 57].includes(code)) return ["☂", "Drizzle"];
-        if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return ["☂", "Rain"];
-        if ([71, 73, 75, 77, 85, 86].includes(code)) return ["❄", "Snow"];
-        if ([95, 96, 99].includes(code)) return ["ϟ", "Thunderstorms"];
-        return ["☁", "Current conditions"];
-      }
-      async function loadWeather(location = state.weatherLocation) {
-        const requestId = ++weatherRequestId;
-        $("#weather-description").textContent = "Getting today's forecast";
-        const getPosition = () => new Promise((resolve) => {
-          if (!navigator.geolocation) return resolve(null);
-          navigator.geolocation.getCurrentPosition((position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }), () => resolve(null), { timeout: 4500, maximumAge: 3600000 });
-        });
+    <dialog id="event-dialog" aria-labelledby="dialog-title">
+      <form id="event-dialog-form">
+        <h2 id="dialog-title">Add calendar event</h2>
+        <div class="dialog-fields">
+          <label
+            >Event name<input
+              class="field"
+              id="dialog-event-title"
+              maxlength="90"
+              required /></label
+          ><label
+            >Date<input
+              class="field"
+              id="dialog-event-date"
+              type="date"
+              required /></label
+          ><label
+            >Time<input class="field" id="dialog-event-time" type="time"
+          /></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="dialog-cancel" type="button" id="dialog-cancel">
+            Cancel</button
+          ><button class="dialog-submit" type="submit">Add event</button>
+        </div>
+      </form>
+    </dialog>
+    <script>
+      (() => {
+        const $ = (selector) => document.querySelector(selector);
+        const storageKey = "daymark-student-dashboard-v1";
+        const today = new Date();
+        const dateKey = (date) =>
+          `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const todayKey = dateKey(today);
+        const weekdays = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        const uid = () =>
+          `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        const defaults = {
+          tasks: [
+            {
+              id: "sample-1",
+              title: "Review biology notes",
+              category: "Study",
+              time: "09:30",
+              done: false,
+            },
+            {
+              id: "sample-2",
+              title: "Finish history reading",
+              category: "School",
+              time: "11:00",
+              done: false,
+            },
+            {
+              id: "sample-3",
+              title: "Plan this week's assignments",
+              category: "Personal",
+              time: "15:30",
+              done: false,
+            },
+          ],
+          goal: { text: "Finish one assignment before lunch", done: false },
+          reminder: {
+            text: "Pack my bag for tomorrow",
+            time: "20:00",
+            enabled: true,
+          },
+          events: [],
+          weatherLocation: null,
+          school: [
+            {
+              id: "s1",
+              day: 1,
+              start: "08:30",
+              end: "09:20",
+              title: "Biology",
+            },
+            {
+              id: "s2",
+              day: 1,
+              start: "09:35",
+              end: "10:25",
+              title: "English literature",
+            },
+            {
+              id: "s3",
+              day: 1,
+              start: "11:00",
+              end: "11:50",
+              title: "Algebra II",
+            },
+            {
+              id: "s4",
+              day: 1,
+              start: "13:00",
+              end: "13:50",
+              title: "World history",
+            },
+            {
+              id: "s5",
+              day: 2,
+              start: "08:30",
+              end: "09:20",
+              title: "Chemistry",
+            },
+            {
+              id: "s6",
+              day: 3,
+              start: "09:35",
+              end: "10:25",
+              title: "English literature",
+            },
+            {
+              id: "s7",
+              day: 4,
+              start: "11:00",
+              end: "11:50",
+              title: "Algebra II",
+            },
+            {
+              id: "s8",
+              day: 5,
+              start: "08:30",
+              end: "09:20",
+              title: "Biology",
+            },
+          ],
+          daily: [
+            {
+              id: "d1",
+              start: "07:00",
+              end: "07:30",
+              title: "Get ready & breakfast",
+            },
+            { id: "d2", start: "16:00", end: "16:45", title: "Homework focus" },
+            { id: "d3", start: "17:00", end: "17:30", title: "Take a break" },
+            { id: "d4", start: "20:30", end: "21:00", title: "Wind down" },
+          ],
+        };
+        let state;
         try {
-          const position = location ? null : await getPosition();
-          if (requestId !== weatherRequestId) return false;
-          const latitude = position?.latitude ?? 40.7128;
-          const longitude = location?.longitude ?? position?.longitude ?? -74.006;
-          const forecastLatitude = location?.latitude ?? latitude;
-          const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${forecastLatitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`);
-          if (!response.ok) throw new Error("Weather request failed");
-          const data = await response.json();
-          if (requestId !== weatherRequestId) return false;
-          const [icon, description] = codeToWeather(data.current.weather_code);
-          $("#weather-location").textContent = location?.label ?? (position ? "Your current location" : "New York · sample location");
-          $("#weather-icon").textContent = icon;
-          $("#temperature").textContent = `${Math.round(data.current.temperature_2m)}°`;
-          $("#weather-description").textContent = description;
-          $("#weather-high-low").textContent = `H ${Math.round(data.daily.temperature_2m_max[0])}°  ·  L ${Math.round(data.daily.temperature_2m_min[0])}°`;
-          return true;
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+          state = saved
+            ? {
+                ...defaults,
+                ...saved,
+                tasks:
+                  saved.date === todayKey
+                    ? (saved.tasks ?? defaults.tasks)
+                    : defaults.tasks,
+                goal:
+                  saved.date === todayKey
+                    ? (saved.goal ?? defaults.goal)
+                    : defaults.goal,
+                reminder: saved.reminder ?? defaults.reminder,
+                events: saved.events ?? defaults.events,
+                school: saved.school ?? defaults.school,
+                daily: saved.daily ?? defaults.daily,
+                date: todayKey,
+              }
+            : { ...defaults, date: todayKey };
         } catch {
-          if (requestId !== weatherRequestId) return false;
-          $("#weather-location").textContent = "Forecast unavailable";
-          $("#weather-icon").textContent = "☁";
-          $("#temperature").textContent = "--°";
-          $("#weather-description").textContent = "Check your connection and try again.";
-          $("#weather-high-low").textContent = "Weather from Open-Meteo";
-          return false;
+          state = { ...defaults, date: todayKey };
         }
-      }
-      async function searchWeatherCity(event) {
-        event.preventDefault();
-        const query = $("#weather-city-query").value.trim();
-        if (!query) return;
-        const button = $("#weather-search-form button[type='submit']");
-        button.disabled = true;
-        $("#weather-search-status").textContent = "Searching for your city...";
-        try {
-          const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
-          if (!response.ok) throw new Error("City search failed");
-          const result = (await response.json()).results?.[0];
-          if (!result) {
-            $("#weather-search-status").textContent = "No city found. Try adding a state or country.";
-            return;
+        let displayedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        let selectedDate = todayKey;
+        let weatherRequestId = 0;
+
+        function save() {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        }
+        function escapeHtml(value) {
+          return String(value).replace(
+            /[&<>"']/g,
+            (char) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[char],
+          );
+        }
+        function timeText(value) {
+          if (!value) return "";
+          const [hours, minutes] = value.split(":").map(Number);
+          return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
+        }
+        function renderTasks() {
+          const list = $("#task-list");
+          const done = state.tasks.filter((task) => task.done).length;
+          const total = state.tasks.length;
+          $("#task-count").textContent = `${done} of ${total} done`;
+          $("#task-progress").style.width =
+            `${total ? Math.round((done / total) * 100) : 0}%`;
+          $("#task-subtitle").textContent = total
+            ? `${total - done} left to focus on.`
+            : "A good day starts with a short list.";
+          list.innerHTML = total
+            ? state.tasks
+                .map(
+                  (task) =>
+                    `<li class="task-row${task.done ? " done" : ""}"><input class="task-check" type="checkbox" data-task-check="${escapeHtml(task.id)}" aria-label="Mark ${escapeHtml(task.title)} ${task.done ? "incomplete" : "complete"}" ${task.done ? "checked" : ""}><div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${task.time ? `${timeText(task.time)} · ` : ""}${escapeHtml(task.category)}</span></div><span class="task-tag ${task.category.toLowerCase()}">${escapeHtml(task.category)}</span><button class="icon-button" type="button" data-task-delete="${escapeHtml(task.id)}" aria-label="Delete ${escapeHtml(task.title)}" title="Delete task"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 13h11l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>`,
+                )
+                .join("")
+            : '<li class="empty-state">Nothing on the list yet. Add a task to get started.</li>';
+          list.querySelectorAll("[data-task-check]").forEach((checkbox) =>
+            checkbox.addEventListener("change", () => {
+              const task = state.tasks.find(
+                (item) => item.id === checkbox.dataset.taskCheck,
+              );
+              if (task) task.done = checkbox.checked;
+              save();
+              renderTasks();
+              renderRecommendation();
+            }),
+          );
+          list.querySelectorAll("[data-task-delete]").forEach((button) =>
+            button.addEventListener("click", () => {
+              state.tasks = state.tasks.filter(
+                (task) => task.id !== button.dataset.taskDelete,
+              );
+              save();
+              renderTasks();
+              renderRecommendation();
+            }),
+          );
+          renderGoal();
+        }
+        function renderGoal() {
+          const goal = state.goal || { text: "", done: false };
+          $("#goal-input").value = goal.text;
+          $("#goal-label").textContent = goal.text || "Make a little progress";
+          $("#goal-done").checked = Boolean(goal.done);
+          const percent = goal.done ? 100 : 0;
+          $("#goal-progress").style.width = `${percent}%`;
+          $("#goal-count").textContent = `${percent}%`;
+        }
+        function renderReminder() {
+          const reminder = state.reminder || {
+            text: "",
+            time: "",
+            enabled: false,
+          };
+          $("#reminder-text").value = reminder.text;
+          $("#reminder-time").value = reminder.time;
+          $("#reminder-status").textContent =
+            reminder.enabled && reminder.text && reminder.time
+              ? `On · ${timeText(reminder.time)} · ${reminder.text}`
+              : "Add a reminder and time, then save it.";
+          $("#reminder-toggle").style.opacity = reminder.enabled ? "1" : ".55";
+          $("#reminder-toggle").setAttribute(
+            "aria-pressed",
+            String(Boolean(reminder.enabled)),
+          );
+        }
+        function renderCalendar() {
+          const year = displayedMonth.getFullYear();
+          const month = displayedMonth.getMonth();
+          $("#month-name").textContent = displayedMonth.toLocaleDateString(
+            undefined,
+            { month: "long", year: "numeric" },
+          );
+          const monthStart = new Date(year, month, 1);
+          const mondayOffset = (monthStart.getDay() + 6) % 7;
+          const gridStart = new Date(year, month, 1 - mondayOffset);
+          const weekdaysShort = ["M", "T", "W", "T", "F", "S", "S"];
+          let markup = weekdaysShort
+            .map(
+              (day) =>
+                `<span class="weekday" role="columnheader">${day}</span>`,
+            )
+            .join("");
+          for (let index = 0; index < 42; index++) {
+            const date = new Date(
+              gridStart.getFullYear(),
+              gridStart.getMonth(),
+              gridStart.getDate() + index,
+            );
+            const key = dateKey(date);
+            const outside = date.getMonth() !== month;
+            const hasEvent = state.events.some((event) => event.date === key);
+            const classes = [
+              "calendar-day",
+              outside ? "outside" : "",
+              key === todayKey ? "today" : "",
+              key === selectedDate ? "selected" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            markup += `<button type="button" class="${classes}" role="gridcell" aria-label="${escapeHtml(date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }))}${hasEvent ? ", has event" : ""}" aria-pressed="${key === selectedDate}" data-calendar-date="${key}">${date.getDate()}${hasEvent ? '<span class="event-dot" aria-hidden="true"></span>' : ""}</button>`;
           }
-          const label = [result.name, result.admin1, result.country].filter((part, index, parts) => part && (index === 0 || part !== parts[index - 1])).join(", ");
-          state.weatherLocation = { label, latitude: result.latitude, longitude: result.longitude };
-          save();
-          $("#weather-search-status").textContent = "Loading forecast...";
-          const loaded = await loadWeather(state.weatherLocation);
-          $("#weather-search-status").textContent = loaded ? `Showing weather for ${label}.` : "City saved, but its forecast is unavailable.";
-        } catch {
-          $("#weather-search-status").textContent = "City search is unavailable. Check your connection.";
-        } finally {
-          button.disabled = false;
+          $("#calendar-grid").innerHTML = markup;
+          $("#calendar-grid")
+            .querySelectorAll("[data-calendar-date]")
+            .forEach((button) =>
+              button.addEventListener("click", () => {
+                selectedDate = button.dataset.calendarDate;
+                const date = new Date(`${selectedDate}T12:00:00`);
+                displayedMonth = new Date(
+                  date.getFullYear(),
+                  date.getMonth(),
+                  1,
+                );
+                renderCalendar();
+              }),
+            );
+          const selected = new Date(`${selectedDate}T12:00:00`);
+          $("#selected-date-label").textContent = selected.toLocaleDateString(
+            undefined,
+            { weekday: "long", month: "short", day: "numeric" },
+          );
+          const events = state.events
+            .filter((event) => event.date === selectedDate)
+            .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+          $("#calendar-events").innerHTML = events.length
+            ? `<div class="event-list">${events.map((event) => `<span class="event-pill"><span>${escapeHtml(event.title)}</span>${event.time ? `<time>${timeText(event.time)}</time>` : ""}<button class="icon-button" data-event-delete="${escapeHtml(event.id)}" type="button" aria-label="Delete ${escapeHtml(event.title)}"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 13h9l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>`).join("")}</div>`
+            : '<span class="panel-kicker">No events on this day.</span>';
+          $("#calendar-events")
+            .querySelectorAll("[data-event-delete]")
+            .forEach((button) =>
+              button.addEventListener("click", () => {
+                state.events = state.events.filter(
+                  (event) => event.id !== button.dataset.eventDelete,
+                );
+                save();
+                renderCalendar();
+                renderRecommendation();
+              }),
+            );
         }
-      }
+        function scheduleRow(item, type) {
+          const day =
+            type === "school"
+              ? `<span class="schedule-day-label">${weekdays[item.day].slice(0, 3)}</span>`
+              : "";
+          return `<li class="schedule-row ${type === "daily" ? "daily" : ""}"><span class="schedule-time">${timeText(item.start)}</span><span class="schedule-marker" aria-hidden="true"></span><span class="schedule-name">${escapeHtml(item.title)}${item.end ? ` <span class="schedule-day-label">· ${timeText(item.end)}</span>` : ""}</span>${day}<button class="icon-button" type="button" data-schedule-delete="${escapeHtml(item.id)}" data-schedule-type="${type}" aria-label="Delete ${escapeHtml(item.title)}" title="Delete item"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 13h9l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></li>`;
+        }
+        function renderSchedules() {
+          const day = Number($("#school-day").value);
+          const classes = state.school
+            .filter((item) => Number(item.day) === day)
+            .sort((a, b) => a.start.localeCompare(b.start));
+          $("#school-list").innerHTML = classes.length
+            ? classes.map((item) => scheduleRow(item, "school")).join("")
+            : '<li class="empty-state">No classes scheduled for this day.</li>';
+          const routine = [...state.daily].sort((a, b) =>
+            a.start.localeCompare(b.start),
+          );
+          $("#daily-list").innerHTML = routine.length
+            ? routine.map((item) => scheduleRow(item, "daily")).join("")
+            : '<li class="empty-state">No daily routine yet. Add your first item.</li>';
+          document
+            .querySelectorAll("[data-schedule-delete]")
+            .forEach((button) =>
+              button.addEventListener("click", () => {
+                const key = button.dataset.scheduleType;
+                state[key] = state[key].filter(
+                  (item) => item.id !== button.dataset.scheduleDelete,
+                );
+                save();
+                renderSchedules();
+                renderRecommendation();
+              }),
+            );
+        }
+        function renderRecommendation() {
+          const openTasks = state.tasks.filter((task) => !task.done);
+          const nextTask = [...openTasks]
+            .filter((task) => task.time)
+            .sort((a, b) => a.time.localeCompare(b.time))[0];
+          const now = `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
+          const nextClass = state.school
+            .filter(
+              (item) =>
+                Number(item.day) === today.getDay() && item.start >= now,
+            )
+            .sort((a, b) => a.start.localeCompare(b.start))[0];
+          let recommendation;
+          if (openTasks.length === 0 && state.tasks.length > 0) {
+            recommendation =
+              "You cleared your task list. Take a real break before choosing what comes next.";
+          } else if (openTasks.length === 0 && state.tasks.length === 0) {
+            recommendation =
+              "Start by adding one small task. A short list is easier to tackle.";
+          } else if (nextTask && nextTask.time <= now) {
+            recommendation = `Your task “${nextTask.title}” is due now or overdue. Give it 15 focused minutes to get moving.`;
+          } else if (nextClass) {
+            recommendation = `Your next class is ${nextClass.title} at ${timeText(nextClass.start)}. Check your bag, then pick one task to do before it.`;
+          } else if (openTasks.length >= 4) {
+            recommendation = `You have ${openTasks.length} tasks to go. Start with “${openTasks[0].title}” and work in a short focus block.`;
+          } else if (state.goal && state.goal.done) {
+            recommendation =
+              "You reached your daily goal. Enjoy a short reset, then decide whether to keep going.";
+          } else {
+            recommendation = `Make a start on “${openTasks[0].title}”. Try 25 minutes of focus, then take a five-minute break.`;
+          }
+          $("#day-status").textContent = recommendation;
+        }
+        function codeToWeather(code) {
+          if (code === 0) return ["☀", "Clear sky"];
+          if ([1, 2].includes(code)) return ["⛅", "Partly cloudy"];
+          if (code === 3) return ["☁", "Overcast"];
+          if ([45, 48].includes(code)) return ["〰", "Foggy"];
+          if ([51, 53, 55, 56, 57].includes(code)) return ["☂", "Drizzle"];
+          if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code))
+            return ["☂", "Rain"];
+          if ([71, 73, 75, 77, 85, 86].includes(code)) return ["❄", "Snow"];
+          if ([95, 96, 99].includes(code)) return ["ϟ", "Thunderstorms"];
+          return ["☁", "Current conditions"];
+        }
+        async function loadWeather(location = state.weatherLocation) {
+          const requestId = ++weatherRequestId;
+          $("#weather-description").textContent = "Getting today's forecast";
+          const getPosition = () =>
+            new Promise((resolve) => {
+              if (!navigator.geolocation) return resolve(null);
+              navigator.geolocation.getCurrentPosition(
+                (position) =>
+                  resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                  }),
+                () => resolve(null),
+                { timeout: 4500, maximumAge: 3600000 },
+              );
+            });
+          try {
+            const position = location ? null : await getPosition();
+            if (requestId !== weatherRequestId) return false;
+            const latitude = position?.latitude ?? 40.7128;
+            const longitude =
+              location?.longitude ?? position?.longitude ?? -74.006;
+            const forecastLatitude = location?.latitude ?? latitude;
+            const response = await fetch(
+              `https://api.open-meteo.com/v1/forecast?latitude=${forecastLatitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`,
+            );
+            if (!response.ok) throw new Error("Weather request failed");
+            const data = await response.json();
+            if (requestId !== weatherRequestId) return false;
+            const [icon, description] = codeToWeather(
+              data.current.weather_code,
+            );
+            $("#weather-location").textContent =
+              location?.label ??
+              (position
+                ? "Your current location"
+                : "New York · sample location");
+            $("#weather-icon").textContent = icon;
+            $("#temperature").textContent =
+              `${Math.round(data.current.temperature_2m)}°`;
+            $("#weather-description").textContent = description;
+            $("#weather-high-low").textContent =
+              `H ${Math.round(data.daily.temperature_2m_max[0])}°  ·  L ${Math.round(data.daily.temperature_2m_min[0])}°`;
+            return true;
+          } catch {
+            if (requestId !== weatherRequestId) return false;
+            $("#weather-location").textContent = "Forecast unavailable";
+            $("#weather-icon").textContent = "☁";
+            $("#temperature").textContent = "--°";
+            $("#weather-description").textContent =
+              "Check your connection and try again.";
+            $("#weather-high-low").textContent = "Weather from Open-Meteo";
+            return false;
+          }
+        }
+        async function searchWeatherCity(event) {
+          event.preventDefault();
+          const query = $("#weather-city-query").value.trim();
+          if (!query) return;
+          const button = $("#weather-search-form button[type='submit']");
+          button.disabled = true;
+          $("#weather-search-status").textContent =
+            "Searching for your city...";
+          try {
+            const response = await fetch(
+              `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`,
+            );
+            if (!response.ok) throw new Error("City search failed");
+            const result = (await response.json()).results?.[0];
+            if (!result) {
+              $("#weather-search-status").textContent =
+                "No city found. Try adding a state or country.";
+              return;
+            }
+            const label = [result.name, result.admin1, result.country]
+              .filter(
+                (part, index, parts) =>
+                  part && (index === 0 || part !== parts[index - 1]),
+              )
+              .join(", ");
+            state.weatherLocation = {
+              label,
+              latitude: result.latitude,
+              longitude: result.longitude,
+            };
+            save();
+            $("#weather-search-status").textContent = "Loading forecast...";
+            const loaded = await loadWeather(state.weatherLocation);
+            $("#weather-search-status").textContent = loaded
+              ? `Showing weather for ${label}.`
+              : "City saved, but its forecast is unavailable.";
+          } catch {
+            $("#weather-search-status").textContent =
+              "City search is unavailable. Check your connection.";
+          } finally {
+            button.disabled = false;
+          }
+        }
 
-      const displayDate = today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-      $("#header-date").textContent = displayDate;
-      $("#welcome-date").textContent = displayDate;
-      $("#school-day").value = String(today.getDay() > 0 && today.getDay() < 6 ? today.getDay() : 1);
-      $("#school-add-day").value = $("#school-day").value;
-      $("#task-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const title = $("#task-title-input").value.trim();
-        if (!title) return;
-        state.tasks.push({ id: uid(), title, category: $("#task-category").value, time: $("#task-time").value, done: false });
-        save(); renderTasks(); renderRecommendation(); event.currentTarget.reset(); $("#task-title-input").focus();
-      });
-      $("#goal-form").addEventListener("submit", (event) => {
-        event.preventDefault(); state.goal = { ...state.goal, text: $("#goal-input").value.trim() };
-        save(); renderGoal(); renderRecommendation();
-      });
-      $("#goal-done").addEventListener("change", (event) => {
-        state.goal = { ...state.goal, done: event.target.checked }; save(); renderGoal(); renderRecommendation();
-      });
-      $("#reminder-form").addEventListener("submit", (event) => {
-        event.preventDefault(); state.reminder = { text: $("#reminder-text").value.trim(), time: $("#reminder-time").value, enabled: true };
-        save(); renderReminder();
-      });
-      $("#reminder-toggle").addEventListener("click", () => { state.reminder = { ...state.reminder, enabled: !state.reminder.enabled }; save(); renderReminder(); });
-      $("#month-prev").addEventListener("click", () => { displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() - 1, 1); renderCalendar(); });
-      $("#month-next").addEventListener("click", () => { displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1); renderCalendar(); });
-      $("#event-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const title = $("#event-title").value.trim();
-        if (!title) return;
-        state.events.push({ id: uid(), date: selectedDate, title, time: $("#event-time").value });
-        save(); renderCalendar(); renderRecommendation(); event.currentTarget.reset(); $("#event-title").focus();
-      });
-      $("#calendar-grid").addEventListener("dblclick", (event) => {
-        const day = event.target.closest("[data-calendar-date]");
-        if (!day) return;
-        selectedDate = day.dataset.calendarDate; $("#dialog-event-date").value = selectedDate; $("#event-dialog").showModal();
-      });
-      $("#dialog-cancel").addEventListener("click", () => $("#event-dialog").close());
-      $("#event-dialog-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const eventDate = $("#dialog-event-date").value;
-        if (!eventDate) return;
-        state.events.push({ id: uid(), date: eventDate, title: $("#dialog-event-title").value.trim(), time: $("#dialog-event-time").value });
-        selectedDate = eventDate;
-        const date = new Date(`${eventDate}T12:00:00`); displayedMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-        save(); renderCalendar(); renderRecommendation(); $("#event-dialog").close(); event.currentTarget.reset();
-      });
-      $("#school-day").addEventListener("change", renderSchedules);
-      $("#school-add-day").addEventListener("change", (event) => { $("#school-day").value = event.target.value; renderSchedules(); });
-      $("#school-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        state.school.push({ id: uid(), day: Number($("#school-add-day").value), start: $("#school-time").value, end: $("#school-end").value, title: $("#school-name").value.trim() });
-        $("#school-day").value = $("#school-add-day").value; save(); renderSchedules(); renderRecommendation(); event.currentTarget.reset();
+        const displayDate = today.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        });
+        $("#header-date").textContent = displayDate;
+        $("#welcome-date").textContent = displayDate;
+        $("#school-day").value = String(
+          today.getDay() > 0 && today.getDay() < 6 ? today.getDay() : 1,
+        );
         $("#school-add-day").value = $("#school-day").value;
-      });
-      $("#daily-form").addEventListener("submit", (event) => {
-        event.preventDefault();
-        state.daily.push({ id: uid(), start: $("#daily-time").value, end: $("#daily-end").value, title: $("#daily-name").value.trim() });
-        save(); renderSchedules(); renderRecommendation(); event.currentTarget.reset();
-      });
-      function setScheduleTab(tab) {
-        const schoolActive = tab === "school";
-        $("#school-tab").setAttribute("aria-selected", String(schoolActive));
-        $("#daily-tab").setAttribute("aria-selected", String(!schoolActive));
-        $("#school-schedule").hidden = !schoolActive; $("#daily-schedule").hidden = schoolActive;
-      }
-      $("#school-tab").addEventListener("click", () => setScheduleTab("school"));
-      $("#daily-tab").addEventListener("click", () => setScheduleTab("daily"));
-      document.querySelectorAll(".nav-link").forEach((link) => link.addEventListener("click", () => {
-        document.querySelectorAll(".nav-link").forEach((item) => item.classList.remove("active")); link.classList.add("active");
-      }));
-      $("#weather-search-form").addEventListener("submit", searchWeatherCity);
-      $("#weather-refresh").addEventListener("click", () => loadWeather());
-      renderTasks(); renderReminder(); renderCalendar(); renderSchedules(); renderRecommendation(); loadWeather();
-    })();
-  </script>
-</body>
+        $("#task-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const title = $("#task-title-input").value.trim();
+          if (!title) return;
+          state.tasks.push({
+            id: uid(),
+            title,
+            category: $("#task-category").value,
+            time: $("#task-time").value,
+            done: false,
+          });
+          save();
+          renderTasks();
+          renderRecommendation();
+          event.currentTarget.reset();
+          $("#task-title-input").focus();
+        });
+        $("#goal-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          state.goal = { ...state.goal, text: $("#goal-input").value.trim() };
+          save();
+          renderGoal();
+          renderRecommendation();
+        });
+        $("#goal-done").addEventListener("change", (event) => {
+          state.goal = { ...state.goal, done: event.target.checked };
+          save();
+          renderGoal();
+          renderRecommendation();
+        });
+        $("#reminder-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          state.reminder = {
+            text: $("#reminder-text").value.trim(),
+            time: $("#reminder-time").value,
+            enabled: true,
+          };
+          save();
+          renderReminder();
+        });
+        $("#reminder-toggle").addEventListener("click", () => {
+          state.reminder = {
+            ...state.reminder,
+            enabled: !state.reminder.enabled,
+          };
+          save();
+          renderReminder();
+        });
+        $("#month-prev").addEventListener("click", () => {
+          displayedMonth = new Date(
+            displayedMonth.getFullYear(),
+            displayedMonth.getMonth() - 1,
+            1,
+          );
+          renderCalendar();
+        });
+        $("#month-next").addEventListener("click", () => {
+          displayedMonth = new Date(
+            displayedMonth.getFullYear(),
+            displayedMonth.getMonth() + 1,
+            1,
+          );
+          renderCalendar();
+        });
+        $("#event-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const title = $("#event-title").value.trim();
+          if (!title) return;
+          state.events.push({
+            id: uid(),
+            date: selectedDate,
+            title,
+            time: $("#event-time").value,
+          });
+          save();
+          renderCalendar();
+          renderRecommendation();
+          event.currentTarget.reset();
+          $("#event-title").focus();
+        });
+        $("#calendar-grid").addEventListener("dblclick", (event) => {
+          const day = event.target.closest("[data-calendar-date]");
+          if (!day) return;
+          selectedDate = day.dataset.calendarDate;
+          $("#dialog-event-date").value = selectedDate;
+          $("#event-dialog").showModal();
+        });
+        $("#dialog-cancel").addEventListener("click", () =>
+          $("#event-dialog").close(),
+        );
+        $("#event-dialog-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const eventDate = $("#dialog-event-date").value;
+          if (!eventDate) return;
+          state.events.push({
+            id: uid(),
+            date: eventDate,
+            title: $("#dialog-event-title").value.trim(),
+            time: $("#dialog-event-time").value,
+          });
+          selectedDate = eventDate;
+          const date = new Date(`${eventDate}T12:00:00`);
+          displayedMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+          save();
+          renderCalendar();
+          renderRecommendation();
+          $("#event-dialog").close();
+          event.currentTarget.reset();
+        });
+        $("#school-day").addEventListener("change", renderSchedules);
+        $("#school-add-day").addEventListener("change", (event) => {
+          $("#school-day").value = event.target.value;
+          renderSchedules();
+        });
+        $("#school-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          state.school.push({
+            id: uid(),
+            day: Number($("#school-add-day").value),
+            start: $("#school-time").value,
+            end: $("#school-end").value,
+            title: $("#school-name").value.trim(),
+          });
+          $("#school-day").value = $("#school-add-day").value;
+          save();
+          renderSchedules();
+          renderRecommendation();
+          event.currentTarget.reset();
+          $("#school-add-day").value = $("#school-day").value;
+        });
+        $("#daily-form").addEventListener("submit", (event) => {
+          event.preventDefault();
+          state.daily.push({
+            id: uid(),
+            start: $("#daily-time").value,
+            end: $("#daily-end").value,
+            title: $("#daily-name").value.trim(),
+          });
+          save();
+          renderSchedules();
+          renderRecommendation();
+          event.currentTarget.reset();
+        });
+        function setScheduleTab(tab) {
+          const schoolActive = tab === "school";
+          $("#school-tab").setAttribute("aria-selected", String(schoolActive));
+          $("#daily-tab").setAttribute("aria-selected", String(!schoolActive));
+          $("#school-schedule").hidden = !schoolActive;
+          $("#daily-schedule").hidden = schoolActive;
+        }
+        $("#school-tab").addEventListener("click", () =>
+          setScheduleTab("school"),
+        );
+        $("#daily-tab").addEventListener("click", () =>
+          setScheduleTab("daily"),
+        );
+        document.querySelectorAll(".nav-link").forEach((link) =>
+          link.addEventListener("click", () => {
+            document
+              .querySelectorAll(".nav-link")
+              .forEach((item) => item.classList.remove("active"));
+            link.classList.add("active");
+          }),
+        );
+        $("#weather-search-form").addEventListener("submit", searchWeatherCity);
+        $("#weather-refresh").addEventListener("click", () => loadWeather());
+        renderTasks();
+        renderReminder();
+        renderCalendar();
+        renderSchedules();
+        renderRecommendation();
+        loadWeather();
+      })();
+    </script>
+  </body>
 </html>
